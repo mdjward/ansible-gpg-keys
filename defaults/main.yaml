@@ -1,0 +1,3 @@
+gpg_package: gnupg2
+gpg_bin: /usr/bin/gpg2
+gpg_import_keys: []

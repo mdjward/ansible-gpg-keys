@@ -1,0 +1,34 @@
+- name: Install Python packaging package
+  ansible.builtin.pip:
+    name: packaging
+    state: present
+  become: true
+  become_user: root
+
+- name: Install GPG package
+  package:
+    name: '{{ gpg_package | default("gnupg") }}'
+    state: present
+  become: true
+
+- block:
+    - name: Import PGP keys
+      gpg_key:
+        content: "{{ item }}"
+        gpgbin: "{{ gpg_bin }}"
+      loop: "{{ gpg_import_keys }}"
+      register: import_gpg_key_output
+      no_log: true
+
+  always:
+    - name: Print GPG import results
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ import_gpg_key_output | json_query('results[*].msg') }}"
+
+    - name: Remove GPG tmp files
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_fileglob: "tmp-gpg-*.asc"
+      when: "import_gpg_key_output['failed'] | default(false)"
